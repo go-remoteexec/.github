@@ -1,0 +1,40 @@
+name: Renovate
+
+on:
+  schedule:
+    # 20:44 UTC. The fleet staggers one organisation per hour, minutes
+    # stepping 00/11/22/33/44, so no two runners ask the same token for its
+    # five thousand requests an hour at once. That grid holds 120 slots and 114
+    # are taken; 20:44 is the next unused one in the walk, the one after
+    # go-gitsafe at 19:44. Taking the frontier rather than any free slot keeps
+    # "which slot is next" answerable without scanning the whole fleet.
+    #
+    # It is outside 05-10 UTC, where about thirty runners already sit, and it
+    # collides with nothing: 21:44, 22:44, 23:44 and 00:00 remain free
+    # after it.
+    - cron: '44 20 * * *'
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: Renovate log level
+        default: info
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run Renovate
+        uses: renovatebot/github-action@v46.2.5
+        with:
+          configurationFile: config.js
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
